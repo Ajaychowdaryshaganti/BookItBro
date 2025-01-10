@@ -5,7 +5,7 @@ const ComingSoonPage = () => {
     <div className="relative min-h-screen bg-white overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(20)].map((_, i) => (
           <div
             key={i}
             className={`
