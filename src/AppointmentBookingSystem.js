@@ -375,8 +375,8 @@ export default function AppointmentBookingSystem() {
           
           <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
             <p className="text-sm text-yellow-700">
-              <strong>UPI Payment:</strong> After clicking "Generate UPI Payment Link", a payment link will be sent to your 
-              mobile number via SMS. Complete the payment to confirm your appointment.
+              <strong>UPI Payment:</strong> After clicking "Generate UPI Payment Link", a payment link will be sent to customers 
+              mobile number via SMS.
             </p>
           </div>
         </div>
