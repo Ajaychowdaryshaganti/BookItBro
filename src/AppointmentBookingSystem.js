@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 
-export default function AppointmentBookingSystem() {
+export default function MobileAppointmentSystem() {
   // States for form inputs
+  const [name, setName] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [age, setAge] = useState('');
+  const [sex, setSex] = useState('');
+  const [address, setAddress] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState('');
-  const [name, setName] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [patientId, setPatientId] = useState('');
   const [bookings, setBookings] = useState([]);
@@ -26,6 +30,14 @@ export default function AppointmentBookingSystem() {
   maxDate.setDate(today.getDate() + 30);
   const maxDateString = maxDate.toISOString().split('T')[0];
 
+  // Available doctors list
+  const doctors = [
+    { id: 1, name: 'Dr. Sharma (Cardiology)' },
+    { id: 2, name: 'Dr. Patel (Orthopedics)' },
+    { id: 3, name: 'Dr. Gupta (General Medicine)' },
+    { id: 4, name: 'Dr. Khan (Pediatrics)' }
+  ];
+
   // Mock time slots - in a real app, these would be fetched based on availability
   const generateTimeSlots = () => {
     const slots = [];
@@ -41,7 +53,7 @@ export default function AppointmentBookingSystem() {
   // Handle date selection
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
-    // In a real app, this would fetch available slots from server
+    // In a real app, this would fetch available slots from server based on doctor and date
     setAvailableSlots(generateTimeSlots());
     setSelectedSlot('');
   };
@@ -60,12 +72,15 @@ export default function AppointmentBookingSystem() {
       setIsLoading(true);
       // Simulating API call delay
       setTimeout(() => {
-        // Mock response
+        // Mock response - in a real app, this would check the database
         if (contactNumber === '9876543210') {
           setName('Rahul Sharma');
+          setAge('32');
+          setSex('Male');
+          setAddress('123 Main Street, Bangalore');
           setPatientId('PT10001');
         } else {
-          // New patient
+          // New patient gets a new ID
           setPatientId(`PT${Math.floor(10000 + Math.random() * 90000)}`);
         }
         setIsLoading(false);
@@ -75,30 +90,53 @@ export default function AppointmentBookingSystem() {
 
   // Handle booking submission
   const handleBookAppointment = () => {
-    if (!selectedDate || !selectedSlot || !name || !contactNumber) {
-      setMessage('Please fill all required fields');
+    if (!validateForm()) {
       return;
     }
 
-    // Add booking to Firebase (mock)
+    // Add booking to state (mock - would be to database in real app)
     const newBooking = {
       id: `BK${Math.floor(10000 + Math.random() * 90000)}`,
-      date: selectedDate,
-      slot: selectedSlot,
       name,
       contactNumber,
+      age,
+      sex,
+      address,
+      doctor: selectedDoctor,
+      date: selectedDate,
+      slot: selectedSlot,
       patientId,
       notes,
       status: 'pending_payment',
       fee: appointmentFee
     };
 
-    // Simulate adding to Firebase
+    // Simulate adding to database
     setBookings([...bookings, newBooking]);
     setMessage('Appointment added to queue successfully!');
     
     // Reset form
     resetForm();
+  };
+
+  // Validate form fields
+  const validateForm = () => {
+    if (!name || !contactNumber || !age || !sex || !selectedDoctor || !selectedDate || !selectedSlot) {
+      setMessage('Please fill all required fields');
+      return false;
+    }
+    
+    if (contactNumber.length !== 10 || !/^\d+$/.test(contactNumber)) {
+      setMessage('Please enter a valid 10-digit contact number');
+      return false;
+    }
+    
+    if (isNaN(age) || age <= 0 || age > 120) {
+      setMessage('Please enter a valid age');
+      return false;
+    }
+    
+    return true;
   };
 
   // Generate UPI payment link
@@ -112,8 +150,7 @@ export default function AppointmentBookingSystem() {
 
   // Handle payment link generation and SMS sending
   const handleGeneratePayment = () => {
-    if (!selectedDate || !selectedSlot || !name || !contactNumber) {
-      setMessage('Please fill all required fields');
+    if (!validateForm()) {
       return;
     }
 
@@ -125,7 +162,7 @@ export default function AppointmentBookingSystem() {
     // Generate UPI payment link
     const paymentLink = generateUPILink(bookingId, appointmentFee);
     
-    // Simulate Twilio SMS service
+    // Simulate SMS service
     setTimeout(() => {
       console.log(`SMS sent to +91${contactNumber} with payment link: ${paymentLink}`);
       
@@ -138,10 +175,14 @@ export default function AppointmentBookingSystem() {
       // Add booking with payment status
       const newBooking = {
         id: bookingId,
-        date: selectedDate,
-        slot: selectedSlot,
         name,
         contactNumber,
+        age,
+        sex,
+        address,
+        doctor: selectedDoctor,
+        date: selectedDate,
+        slot: selectedSlot,
         patientId,
         notes,
         status: 'payment_sent',
@@ -190,259 +231,318 @@ export default function AppointmentBookingSystem() {
 
   // Reset form fields
   const resetForm = () => {
-    setSelectedDate('');
-    setSelectedSlot('');
     setName('');
     setContactNumber('');
+    setAge('');
+    setSex('');
+    setAddress('');
+    setSelectedDoctor('');
+    setSelectedDate('');
+    setSelectedSlot('');
     setNotes('');
     setPatientId('');
     setAvailableSlots([]);
   };
 
-  // Mock fetch bookings (in real app, would fetch from Firebase)
+  // Mock fetch bookings (in real app, would fetch from database)
   useEffect(() => {
     // Simulate fetching existing bookings
     const mockBookings = [
       { 
-        id: 'BK10001', 
+        id: 'BK10001',
+        name: 'Priya Patel',
+        contactNumber: '8765432101',
+        age: '28',
+        sex: 'Female',
+        address: '45 Green Park, Delhi',
+        doctor: 'Dr. Khan (Pediatrics)',
         date: '2025-04-15', 
         slot: '10:00 AM', 
-        name: 'Priya Patel', 
-        contactNumber: '8765432101', 
         status: 'confirmed',
         fee: 500
       },
       { 
-        id: 'BK10002', 
+        id: 'BK10002',
+        name: 'Arun Kumar',
+        contactNumber: '9876543212',
+        age: '45',
+        sex: 'Male',
+        address: '78 Lake View, Mumbai',
+        doctor: 'Dr. Sharma (Cardiology)', 
         date: '2025-04-16', 
         slot: '2:30 PM', 
-        name: 'Arun Kumar', 
-        contactNumber: '9876543212', 
         status: 'pending_payment',
         fee: 500
-      },
-      { 
-        id: 'BK10003', 
-        date: '2025-04-17', 
-        slot: '11:00 AM', 
-        name: 'Neha Sharma', 
-        contactNumber: '7654321098', 
-        status: 'payment_sent',
-        fee: 700,
-        paymentLink: 'shorturl.at/wxyz1'
       }
     ];
     setBookings(mockBookings);
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h1 className="text-2xl font-bold mb-6 text-blue-700">Medical Appointment Booking System</h1>
+    <div className="max-w-md mx-auto p-4 bg-white">
+      <h1 className="text-xl font-bold mb-4 text-blue-700 text-center">Medical Appointment</h1>
       
-      <div className="flex space-x-4 mb-6">
+      <div className="flex mb-4">
         <button 
-          className={`px-4 py-2 rounded-md ${!showBookings ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          className={`flex-1 py-2 text-sm rounded-l-md ${!showBookings ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => setShowBookings(false)}
         >
           Book Appointment
         </button>
         <button 
-          className={`px-4 py-2 rounded-md ${showBookings ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          className={`flex-1 py-2 text-sm rounded-r-md ${showBookings ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => setShowBookings(true)}
         >
-          Manage Bookings
+          My Bookings
         </button>
       </div>
       
+      {message && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-md text-sm">
+          {message}
+        </div>
+      )}
+      
       {!showBookings ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Select Date</label>
+        <div className="space-y-4">
+          {/* Form Fields in the specified order */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Full Name *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter Patient's full name"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Contact Number *</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
+                  +91
+                </span>
                 <input
-                  type="date"
-                  min={minDate}
-                  max={maxDateString}
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              
-              {selectedDate && (
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">Select Time Slot</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`p-2 border rounded-md ${
-                          selectedSlot === slot ? 'bg-blue-500 text-white' : 'bg-gray-100'
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Appointment Fee (₹)</label>
-                <input
-                  type="number"
-                  value={appointmentFee}
-                  onChange={(e) => setAppointmentFee(Number(e.target.value))}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  min="100"
-                  step="100"
+                  type="tel"
+                  value={contactNumber}
+                  onChange={(e) => setContactNumber(e.target.value.replace(/\D/g, ''))}
+                  onBlur={fetchPatientInfo}
+                  placeholder="10-digit mobile number"
+                  className="flex-1 p-2 border border-gray-300 rounded-r-md text-sm"
+                  maxLength={10}
+                  required
                 />
               </div>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Contact Number</label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
-                    +91
-                  </span>
-                  <input
-                    type="tel"
-                    value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    onBlur={fetchPatientInfo}
-                    placeholder="10-digit mobile number"
-                    className="flex-1 p-2 border border-gray-300 rounded-r-md"
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Full Name</label>
+            <div className="flex space-x-2">
+              <div className="w-1/2">
+                <label className="block text-gray-700 text-sm font-medium mb-1">Age *</label>
                 <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter full name"
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="Years"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  min="0"
+                  max="120"
+                  required
                 />
               </div>
               
-              {patientId && (
-                <div className="p-2 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-700">Patient ID: {patientId}</p>
-                </div>
-              )}
+              <div className="w-1/2">
+                <label className="block text-gray-700 text-sm font-medium mb-1">Sex *</label>
+                <select
+                  value={sex}
+                  onChange={(e) => setSex(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                  required
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Address</label>
+              <textarea
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Patient's address"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm h-16"
+              ></textarea>
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Select Doctor *</label>
+              <select
+                value={selectedDoctor}
+                onChange={(e) => setSelectedDoctor(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                required
+              >
+                <option value="">Select doctor</option>
+                {doctors.map(doctor => (
+                  <option key={doctor.id} value={doctor.name}>
+                    {doctor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Appointment Date *</label>
+              <input
+                type="date"
+                min={minDate}
+                max={maxDateString}
+                value={selectedDate}
+                onChange={handleDateChange}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                required
+              />
+            </div>
+            
+            {selectedDate && (
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Select Time Slot *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {availableSlots.map((slot) => (
+                    <button
+                      key={slot}
+                      onClick={() => setSelectedSlot(slot)}
+                      className={`p-2 border rounded-md text-xs ${
+                        selectedSlot === slot ? 'bg-blue-500 text-white' : 'bg-gray-100'
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Notes for Doctor</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Symptoms or concerns"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm h-16"
+              ></textarea>
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Consultation Fee</label>
+              <div className="flex items-center bg-gray-50 p-2 rounded-md">
+                <span className="text-green-700 font-medium">₹ {appointmentFee}</span>
+                <span className="ml-2 text-xs text-gray-500">(Pay via UPI after booking)</span>
+              </div>
+            </div>
+            
+            {patientId && (
+              <div className="p-2 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs text-blue-700">Patient ID: {patientId}</p>
+              </div>
+            )}
           </div>
           
-          <div>
-            <label className="block text-gray-700 font-medium mb-2">Additional Notes for Doctor</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any symptoms or special requirements"
-              className="w-full p-2 border border-gray-300 rounded-md h-24"
-            ></textarea>
-          </div>
-          
-          <div className="flex space-x-4">
-            <button
-              onClick={handleBookAppointment}
-              disabled={isLoading}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {isLoading ? 'Processing...' : 'Add to Queue'}
-            </button>
+          <div className="pt-2 flex flex-col space-y-2">
             <button
               onClick={handleGeneratePayment}
               disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              className="w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium"
             >
-              {isLoading ? 'Processing...' : 'Generate UPI Payment Link'}
+              {isLoading ? 'Processing...' : 'Book & Pay Now'}
+            </button>
+            <button
+              onClick={handleBookAppointment}
+              disabled={isLoading}
+              className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 text-sm font-medium"
+            >
+              {isLoading ? 'Processing...' : 'Book Without Payment'}
             </button>
           </div>
           
-          {message && (
-            <div className="mt-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-md">
-              {message}
-            </div>
-          )}
-          
           <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
-            <p className="text-sm text-yellow-700">
-              <strong>UPI Payment:</strong> After clicking "Generate UPI Payment Link", a payment link will be sent to customers 
-              mobile number via SMS.
+            <p className="text-xs text-yellow-700">
+              <strong>Note:</strong> Payment link will be sent to above mobile number.
             </p>
           </div>
         </div>
       ) : (
         <div>
-          <h2 className="text-xl font-semibold mb-4">Manage Bookings</h2>
+          <h1 className="text-lg text-center font-semibold mb-3">Appointments</h1>
           
-          {message && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-md">
-              {message}
+          {bookings.length === 0 ? (
+            <div className="py-8 text-center text-gray-500">
+              <p>No appointments found</p>
             </div>
-          )}
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">Booking ID</th>
-                  <th className="py-2 px-4 border-b">Date</th>
-                  <th className="py-2 px-4 border-b">Time Slot</th>
-                  <th className="py-2 px-4 border-b">Patient Name</th>
-                  <th className="py-2 px-4 border-b">Contact</th>
-                  <th className="py-2 px-4 border-b">Fee (₹)</th>
-                  <th className="py-2 px-4 border-b">Status</th>
-                  <th className="py-2 px-4 border-b">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.map((booking) => (
-                  <tr key={booking.id}>
-                    <td className="py-2 px-4 border-b">{booking.id}</td>
-                    <td className="py-2 px-4 border-b">{formatDateForDisplay(booking.date)}</td>
-                    <td className="py-2 px-4 border-b">{booking.slot}</td>
-                    <td className="py-2 px-4 border-b">{booking.name}</td>
-                    <td className="py-2 px-4 border-b">{booking.contactNumber}</td>
-                    <td className="py-2 px-4 border-b">{booking.fee}</td>
-                    <td className="py-2 px-4 border-b">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                        booking.status === 'pending_payment' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {booking.status === 'confirmed' ? 'Confirmed' : 
-                         booking.status === 'pending_payment' ? 'Payment Pending' : 'Payment Link Sent'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {(booking.status === 'pending_payment' || booking.status === 'payment_sent') && (
-                        <button
-                          onClick={() => handleRegeneratePayment(booking)}
-                          disabled={isLoading}
-                          className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-400"
-                        >
-                          Resend Payment
-                        </button>
-                      )}
+          ) : (
+            <div className="space-y-4">
+              {bookings.map((booking) => (
+                <div key={booking.id} className="border border-gray-200 rounded-md p-3 bg-white shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium">{booking.doctor}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                      booking.status === 'pending_payment' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {booking.status === 'confirmed' ? 'Confirmed' : 
+                       booking.status === 'pending_payment' ? 'Payment Pending' : 'Payment Link Sent'}
+                    </span>
+                  </div>
+                  
+                  <div className="mt-2 text-sm">
+                    <div className="flex justify-between font-medium">
+                      <span className="text-gray-600"> Patient's Name:</span>
+                      <span>{booking.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Date:</span>
+                      <span>{formatDateForDisplay(booking.date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Time:</span>
+                      <span>{booking.slot}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Fee:</span>
+                      <span>₹{booking.fee}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Booking ID:</span>
+                      <span className="text-xs">{booking.id}</span>
+                    </div>
+                  </div>
+                  
+                  {(booking.status === 'pending_payment' || booking.status === 'payment_sent') && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => handleRegeneratePayment(booking)}
+                        disabled={isLoading}
+                        className="w-full py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-400"
+                      >
+                        {booking.status === 'pending_payment' ? 'Pay Now' : 'Resend Payment Link'}
+                      </button>
+                      
                       {booking.paymentLink && (
-                        <div className="mt-1 text-xs text-gray-500">
+                        <div className="mt-1 text-xs text-center text-gray-500">
                           Link: {booking.paymentLink}
                         </div>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
