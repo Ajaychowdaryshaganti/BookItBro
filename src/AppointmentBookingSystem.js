@@ -327,7 +327,7 @@ export default function AppointmentBookingSystem() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your full name"
+                  placeholder="Enter full name"
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
