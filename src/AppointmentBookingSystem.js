@@ -18,6 +18,17 @@ export default function MobileAppointmentSystem() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [appointmentFee, setAppointmentFee] = useState(500); // Default fee in INR
+  
+  // Form validation errors
+  const [errors, setErrors] = useState({
+    name: '',
+    contactNumber: '',
+    age: '',
+    sex: '',
+    doctor: '',
+    date: '',
+    slot: ''
+  });
 
   // Constants for UPI payment
   const UPI_ID = "ajaychowdarys@ybl";
@@ -53,6 +64,8 @@ export default function MobileAppointmentSystem() {
   // Handle date selection
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
+    // Clear date error when a date is selected
+    setErrors({...errors, date: ''});
     // In a real app, this would fetch available slots from server based on doctor and date
     setAvailableSlots(generateTimeSlots());
     setSelectedSlot('');
@@ -70,6 +83,8 @@ export default function MobileAppointmentSystem() {
     // Mock AI flow for retrieving patient info
     if (contactNumber.length === 10) {
       setIsLoading(true);
+      // Clear contact number error when valid
+      setErrors({...errors, contactNumber: ''});
       // Simulating API call delay
       setTimeout(() => {
         // Mock response - in a real app, this would check the database
@@ -85,6 +100,8 @@ export default function MobileAppointmentSystem() {
         }
         setIsLoading(false);
       }, 1000);
+    } else if (contactNumber.length > 0) {
+      setErrors({...errors, contactNumber: 'Please enter a valid 10-digit number'});
     }
   };
 
@@ -119,24 +136,105 @@ export default function MobileAppointmentSystem() {
     resetForm();
   };
 
+  // Handle input changes and clear errors
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+    if (e.target.value) {
+      setErrors({...errors, name: ''});
+    }
+  };
+
+  const handleContactChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setContactNumber(value);
+    if (value.length === 10) {
+      setErrors({...errors, contactNumber: ''});
+    }
+  };
+
+  const handleAgeChange = (e) => {
+    setAge(e.target.value);
+    if (!isNaN(e.target.value) && e.target.value > 0 && e.target.value <= 120) {
+      setErrors({...errors, age: ''});
+    }
+  };
+
+  const handleSexChange = (e) => {
+    setSex(e.target.value);
+    if (e.target.value) {
+      setErrors({...errors, sex: ''});
+    }
+  };
+
+  const handleDoctorChange = (e) => {
+    setSelectedDoctor(e.target.value);
+    if (e.target.value) {
+      setErrors({...errors, doctor: ''});
+    }
+  };
+
+  const handleSlotSelection = (slot) => {
+    setSelectedSlot(slot);
+    setErrors({...errors, slot: ''});
+  };
+
   // Validate form fields
   const validateForm = () => {
-    if (!name || !contactNumber || !age || !sex || !selectedDoctor || !selectedDate || !selectedSlot) {
-      setMessage('Please fill all required fields');
-      return false;
+    const newErrors = {
+      name: '',
+      contactNumber: '',
+      age: '',
+      sex: '',
+      doctor: '',
+      date: '',
+      slot: ''
+    };
+    
+    let isValid = true;
+    
+    if (!name) {
+      newErrors.name = 'Name is required';
+      isValid = false;
     }
     
-    if (contactNumber.length !== 10 || !/^\d+$/.test(contactNumber)) {
-      setMessage('Please enter a valid 10-digit contact number');
-      return false;
+    if (!contactNumber) {
+      newErrors.contactNumber = 'Contact number is required';
+      isValid = false;
+    } else if (contactNumber.length !== 10 || !/^\d+$/.test(contactNumber)) {
+      newErrors.contactNumber = 'Please enter a valid 10-digit number';
+      isValid = false;
     }
     
-    if (isNaN(age) || age <= 0 || age > 120) {
-      setMessage('Please enter a valid age');
-      return false;
+    if (!age) {
+      newErrors.age = 'Age is required';
+      isValid = false;
+    } else if (isNaN(age) || age <= 0 || age > 120) {
+      newErrors.age = 'Please enter a valid age';
+      isValid = false;
     }
     
-    return true;
+    if (!sex) {
+      newErrors.sex = 'Please select sex';
+      isValid = false;
+    }
+    
+    if (!selectedDoctor) {
+      newErrors.doctor = 'Please select a doctor';
+      isValid = false;
+    }
+    
+    if (!selectedDate) {
+      newErrors.date = 'Please select a date';
+      isValid = false;
+    }
+    
+    if (!selectedSlot) {
+      newErrors.slot = 'Please select a time slot';
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
   };
 
   // Generate UPI payment link
@@ -242,6 +340,15 @@ export default function MobileAppointmentSystem() {
     setNotes('');
     setPatientId('');
     setAvailableSlots([]);
+    setErrors({
+      name: '',
+      contactNumber: '',
+      age: '',
+      sex: '',
+      doctor: '',
+      date: '',
+      slot: ''
+    });
   };
 
   // Mock fetch bookings (in real app, would fetch from database)
@@ -312,11 +419,11 @@ export default function MobileAppointmentSystem() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleNameChange}
                 placeholder="Enter Patient's full name"
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                required
+                className={`w-full p-2 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-md text-sm`}
               />
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
             
             <div>
@@ -328,14 +435,14 @@ export default function MobileAppointmentSystem() {
                 <input
                   type="tel"
                   value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value.replace(/\D/g, ''))}
+                  onChange={handleContactChange}
                   onBlur={fetchPatientInfo}
                   placeholder="10-digit mobile number"
-                  className="flex-1 p-2 border border-gray-300 rounded-r-md text-sm"
+                  className={`flex-1 p-2 border ${errors.contactNumber ? 'border-red-500' : 'border-gray-300'} rounded-r-md text-sm`}
                   maxLength={10}
-                  required
                 />
               </div>
+              {errors.contactNumber && <p className="mt-1 text-xs text-red-500">{errors.contactNumber}</p>}
             </div>
             
             <div className="flex space-x-2">
@@ -344,28 +451,28 @@ export default function MobileAppointmentSystem() {
                 <input
                   type="number"
                   value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  onChange={handleAgeChange}
                   placeholder="Years"
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  className={`w-full p-2 border ${errors.age ? 'border-red-500' : 'border-gray-300'} rounded-md text-sm`}
                   min="0"
                   max="120"
-                  required
                 />
+                {errors.age && <p className="mt-1 text-xs text-red-500">{errors.age}</p>}
               </div>
               
               <div className="w-1/2">
                 <label className="block text-gray-700 text-sm font-medium mb-1">Sex *</label>
                 <select
                   value={sex}
-                  onChange={(e) => setSex(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
-                  required
+                  onChange={handleSexChange}
+                  className={`w-full p-2 border ${errors.sex ? 'border-red-500' : 'border-gray-300'} rounded-md text-sm bg-white`}
                 >
                   <option value="">Select</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+                {errors.sex && <p className="mt-1 text-xs text-red-500">{errors.sex}</p>}
               </div>
             </div>
             
@@ -383,9 +490,8 @@ export default function MobileAppointmentSystem() {
               <label className="block text-gray-700 text-sm font-medium mb-1">Select Doctor *</label>
               <select
                 value={selectedDoctor}
-                onChange={(e) => setSelectedDoctor(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
-                required
+                onChange={handleDoctorChange}
+                className={`w-full p-2 border ${errors.doctor ? 'border-red-500' : 'border-gray-300'} rounded-md text-sm bg-white`}
               >
                 <option value="">Select doctor</option>
                 {doctors.map(doctor => (
@@ -394,6 +500,7 @@ export default function MobileAppointmentSystem() {
                   </option>
                 ))}
               </select>
+              {errors.doctor && <p className="mt-1 text-xs text-red-500">{errors.doctor}</p>}
             </div>
             
             <div>
@@ -404,27 +511,29 @@ export default function MobileAppointmentSystem() {
                 max={maxDateString}
                 value={selectedDate}
                 onChange={handleDateChange}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                required
+                className={`w-full p-2 border ${errors.date ? 'border-red-500' : 'border-gray-300'} rounded-md text-sm`}
               />
+              {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
             </div>
             
             {selectedDate && (
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-1">Select Time Slot *</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className={`grid grid-cols-3 gap-2 ${errors.slot ? 'border border-red-500 p-1 rounded-md' : ''}`}>
                   {availableSlots.map((slot) => (
                     <button
                       key={slot}
-                      onClick={() => setSelectedSlot(slot)}
+                      onClick={() => handleSlotSelection(slot)}
                       className={`p-2 border rounded-md text-xs ${
                         selectedSlot === slot ? 'bg-blue-500 text-white' : 'bg-gray-100'
                       }`}
+                      type="button"
                     >
                       {slot}
                     </button>
                   ))}
                 </div>
+                {errors.slot && <p className="mt-1 text-xs text-red-500">{errors.slot}</p>}
               </div>
             )}
             
@@ -458,13 +567,15 @@ export default function MobileAppointmentSystem() {
               onClick={handleGeneratePayment}
               disabled={isLoading}
               className="w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium"
+              type="button"
             >
-              {isLoading ? 'Processing...' : 'Book & Pay Now'}
+              {isLoading ? 'Processing...' : 'Send Payment Link'}
             </button>
             <button
               onClick={handleBookAppointment}
               disabled={isLoading}
               className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 text-sm font-medium"
+              type="button"
             >
               {isLoading ? 'Processing...' : 'Book Without Payment'}
             </button>
@@ -501,7 +612,7 @@ export default function MobileAppointmentSystem() {
                   
                   <div className="mt-2 text-sm">
                     <div className="flex justify-between font-medium">
-                      <span className="text-gray-600"> Patient's Name:</span>
+                      <span className="text-gray-600">Patient's Name:</span>
                       <span>{booking.name}</span>
                     </div>
                     <div className="flex justify-between">
@@ -528,8 +639,9 @@ export default function MobileAppointmentSystem() {
                         onClick={() => handleRegeneratePayment(booking)}
                         disabled={isLoading}
                         className="w-full py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-400"
+                        type="button"
                       >
-                        {booking.status === 'pending_payment' ? 'Pay Now' : 'Resend Payment Link'}
+                        {booking.status === 'pending_payment' ? 'Send Payment Link' : 'Resend Payment Link'}
                       </button>
                       
                       {booking.paymentLink && (
